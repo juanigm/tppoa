@@ -1,0 +1,25 @@
+{
+  "name": "tppoa",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/juanigm/tppoa.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/juanigm/tppoa/issues"
+  },
+  "homepage": "https://github.com/juanigm/tppoa#readme",
+  "dependencies": {
+    "apollo-server-express": "^2.25.0",
+    "express": "^4.17.1",
+    "graphql": "^15.5.0",
+    "graphql-tools": "^7.0.5"
+  }
+}
