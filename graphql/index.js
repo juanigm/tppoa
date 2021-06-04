@@ -57,25 +57,38 @@ type Mutation{
 
 `; 
 
+
+
+const queryDB = (req, sql, args) => new Promise((resolve, reject) => {
+    req.mysqlDb.query(sql, args, (err, rows) => {
+        if (err)
+            return reject(err);
+        rows.changedRows || rows.affectedRows || rows.insertId ? resolve(true) : resolve(rows);
+    });
+});
+
 const resolvers = {
 
-    /*addProducto: (data) => {
-        const p={'id': counter, 'precio': data.precio, 'marca': data.marca, 'descripcion': data.descripcion, 'categoria': data.categoria};
-        productos.push(p);
-        counter++;
-        return p;
-    }
-*/
     Query: {
-        async productos(_, args) {
+
+
+        productos: (args, req) => queryDB(req, "select * from productos").then(data => data),
+
+
+        /*async productos(_, args) {
             
             console.log(productos);
             return await productos;
-        },
+        },*/
     },
 
     Mutation: {
-        async addProducto(_, { precio, marca, descripcion, categoria }) {
+
+
+        addProducto: (args, req) => queryDB(req, "insert into users SET ?", args).then(data => data)
+
+
+        /*async addProducto(_, { precio, marca, descripcion, categoria }) {
             let newProducto = {
                 id:0,
                 precio,
@@ -88,23 +101,10 @@ const resolvers = {
         },
         async addTabla(root, {models}){
             return await models.tablaPrueba.create
-        }  
+        }  */
     },
 
 }
-
-// const queryDB = (req, sql, args) => new Promise((resolve, reject) => {
-//     req.mysqlDb.query(sql, args, (err, rows) => {
-//         if (err)
-//             return reject(err);
-//         rows.changedRows || rows.affectedRows || rows.insertId ? resolve(true) : resolve(rows);
-//     });
-// });
-
-// var root = {
-//   getUsers: (args, req) => queryDB(req, "select * from users").then(data => data),
-//   getUserInfo: (args, req) => queryDB(req, "select * from users where id = ?", [args.id]).then(data => data[0])
-// }; 
 
 const schema = makeExecutableSchema({
     typeDefs,
