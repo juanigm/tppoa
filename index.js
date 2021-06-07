@@ -81,7 +81,6 @@ const queryDB = (req, sql, args) => new Promise((resolve, reject) => {
 });
 
 const root = {
-  Query:{
 
   productos: (args, req) => queryDB(req, "select * from producto").then((data) => {console.log(data); return data;}),
   addProducto: (args, req) => queryDB(req, "insert into producto SET ?", args).then((data) => {console.log(data); return data;}),
@@ -89,15 +88,17 @@ const root = {
   addCliente: (args, req) => queryDB(req, "insert into cliente SET ?", args).then((data) => {console.log(data); return data;}),
 
   login: (args, req) => {
-     queryDB(req, "select * from cliente where mail = ? and password = ?", [args.mail, args.password]).then(data => data)
-     //.then((data) => {
-       //console.log(data);
-        //return true;
-      //})
+     queryDB(req, "select * from cliente where mail = ? and password = ?", [args.mail, args.password])
+     .then((data) => {
+       if(data.length > 0){
+        //Generar token
+       }
+       console.log(data);
+        return data;
+      })
     },
-  categorias: (args, req) => queryDB(req, "select * from categorias").then(data => data)
-  },
-  Mutation: {
+  categorias: (args, req) => queryDB(req, "select * from categorias").then(data => data),
+
     addCategoria: (args, req) => {
       queryDB(req, "insert into categoria SET ?", args)
       //.then(data => data);
@@ -123,8 +124,7 @@ const root = {
         })
   
       })
-    }
-  },
+    },
 
   /*getUsers: (args, req) => queryDB(req, "select * from users").then(data => data),
   getUserInfo: (args, req) => queryDB(req, "select * from users where id = ?", [args.id]).then(data => data[0]),
