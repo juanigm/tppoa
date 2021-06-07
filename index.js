@@ -12,10 +12,10 @@ const schema = buildSchema(`
 type Producto{
 
     ProductID: Int
-    precio: Float
-    marca: String
-    descripcion: String
-    categoria: String
+    Precio: Float
+    Marca: String
+    Descripcion: String
+    categoria: Categoria
 }
 
 type Cliente{
@@ -24,8 +24,25 @@ type Cliente{
     nombre: String
     apellido: String
     documento: Int
+    mail: String
+    password: String
     puntos: Int
     productosComprados: [Producto]
+}
+
+
+type Categoria{
+    categoriaID: Int
+    nombre: String
+    descripcion: String
+}
+
+type Canje{
+
+  id: ID
+  ProductoID: Int
+  ClienteID: Int
+  TotalCompra: Float
 }
 
 type User {
@@ -38,11 +55,16 @@ type User {
   type Query {
     productos: [Producto],
     clientes: [Cliente],
+    categorias: [Categoria],
     getUsers: [User],
     getUserInfo(id: Int) : User
   }
+
   type Mutation {
     addProducto(precio: Float, marca: String, descripcion: String, categoria: Int): Boolean
+    addCategoria(nombre: String, descripcion: String): Boolean
+    addCliente(nombre: String, apellido: String, documento: Int, mail: String, puntos: Int): Categoria
+    login(mail: String, password: String): Boolean
     updateUserInfo(id: Int, name: String, email: String, job_title: String) : Boolean
     createUser(name: String, email: String, job_title: String) : Boolean
     deleteUser(id: Int) : Boolean
@@ -54,7 +76,7 @@ const queryDB = (req, sql, args) => new Promise((resolve, reject) => {
         if (err)
             return reject(err);
         console.log(rows);
-        rows.changedRows || rows.affectedRows || rows.insertId ? resolve(true) : resolve(rows);
+        rows.changedRows || rows.affectedRows || rows.insertId ? resolve(rows) : resolve(rows);
     });
 });
 
@@ -62,6 +84,30 @@ const root = {
   productos: (args, req) => queryDB(req, "select * from producto").then(data => data),
   addProducto: (args, req) => queryDB(req, "insert into producto SET ?", args).then((data) => {console.log(data); return data;}),
   clientes: (args, req) => queryDB(req, "select * from cliente").then(data => data),
+  addCliente: (args, req) => queryDB(req, "insert into cliente SET ?", args).then((data) => {console.log(data); return data;}),
+  login: (args, req) => queryDB(req, "select from cliente SET ? where mail = ? && contraseña = ?", [args.mail, args.contraseña]).then((data) => {console.log(data); return data;}),
+  categorias: (args, req) => queryDB(req, "select * from categorias").then(data => data),
+
+  addCategoria: (args, req) => {
+    queryDB(req, "insert into categoria SET ?", args)
+    .then((data) => {
+      const cat = JSON.parse(JSON.stringify(data));
+      console.log('data1: ', cat);
+      queryDB(req, "select * from categoria where categoriaID = " + cat.insertId)
+      .then((data) => {
+        //const result = Object.values(JSON.parse(JSON.stringify(data[0])));
+        //console.log('result', result);
+        console.log('data', JSON.parse(JSON.stringify(data)));
+        console.log('data[0]', JSON.parse(JSON.stringify(data[0])));
+        const result = JSON.parse(JSON.stringify(data[0]));
+        return result;
+
+        //console.log('data[0][0]: ', data[0][0]);
+        //return data[0][0];
+      })
+    })
+  },
+
   getUsers: (args, req) => queryDB(req, "select * from users").then(data => data),
   getUserInfo: (args, req) => queryDB(req, "select * from users where id = ?", [args.id]).then(data => data[0]),
   updateUserInfo: (args, req) => queryDB(req, "update users SET ? where id = ?", [args, args.id]).then(data => data),
