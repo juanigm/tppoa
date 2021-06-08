@@ -1,0 +1,45 @@
+//GOOOD PERO NO MUESTRA EN EL PLAYGROUND, NO DEVUELVE EL OBJETO
+//GOD LO DEL TOKEN
+query{
+    login(mail:"juanigm99@gmail.com", password: "123")
+}
+
+mutation{
+    addCanje(clientID: 1, fecha: "10/10/2010", totalPuntos: 50) {
+      canjeID
+      clientID
+      fecha
+      totalPuntos
+    }
+  }
+
+//GOOOOOOOOOOOD
+query{
+    productos {
+	  ProductID
+	  Precio
+	  Marca
+	  Descripcion
+	}
+}
+
+query{
+    clientes {
+      ClientID
+      Nombre
+      Apellido
+      Documento
+      mail
+      password
+      Puntos
+    }
+  }
+
+  query{
+    canjes {
+      canjeID
+      clientID
+      fecha
+      totalPuntos
+    }
+  }
