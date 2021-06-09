@@ -27,6 +27,7 @@ type Cliente{
     mail: String
     password: String
     Puntos: Int
+    token: String
 }
 
 
@@ -50,6 +51,11 @@ type canjeproducto{
   productID: Int
 }
 
+type loginResponse{
+  cliente: Cliente
+  productos: [Producto]
+}
+
 type User {
     id: String
     name: String
@@ -61,7 +67,7 @@ type User {
     productos: [Producto],
     clientes: [Cliente],
     categorias: [Categoria],
-    login(mail: String, password: String): [Cliente],
+    login(mail: String, password: String): loginResponse,
     canjes: [Canje],
     getUsers: [User],
     getUserInfo(id: Int) : User
@@ -82,7 +88,6 @@ type User {
 
 const queryDB = (req, sql, args) => new Promise((resolve, reject) => {
     req.mysqlDb.query(sql, args, (err, rows) => {
-    console.log("sql: ", sql)
         if (err)
             return reject(err);
         //console.log(rows);
@@ -127,24 +132,41 @@ const root = {
 
   //MUTATIONS
 
-  login: (args, req) => {
-    queryDB(req, "select * from cliente where mail = ? and password = ?", [args.mail, args.password])
-    .then((data) => {
-      if(data.length > 0){
-       let token = generarToken();
-       console.log("Token", token);
-       queryDB(req, "insert into token values('', " + data[0].ClientID + ", 1, '" + token + "')").then((data) => {console.log("Data Token: ", data); return data;});
-       console.log("Login data: ", data);
-       const productos = queryDB(req, "select * from producto").then((data) => {console.log("productos data: ", data); return data;})
-        
-       return data;
-      } else{
-        console.log("array vacio, data vacia");
-      }
-     //Else, devolver error
-      
-     })
+  login: async (args, req) => {
+    let user = await queryDB(req, "select * from cliente where mail = ? and password = ?", [args.mail, args.password])
+        .then((data) => {
+          console.log("Cliente data: ", data);
+          if(data.length > 0) return data[0];
+        });
+    console.log("user", user);
+    if(user){
+      let token = generarToken();
+      console.log("Token", token);
+
+      queryDB(req, "insert into token values('', " + user.ClientID + ", 1, '" + token + "')")
+      .then((data) => {
+        console.log("New Token: id ", data); 
+      }).catch((e) => console.log(e));
+
+      user.token = token;
+      let productos = await queryDB(req, "select * from producto")
+        .then((data) => {
+          let res = [];
+          data.forEach(p => {
+            res.push({...p});
+          })
+          console.log("RES: ", res); 
+          return res;
+        })
+      const r = {cliente: user, productos: productos};
+      console.log("R: ", r);
+      return r;
+    }else{
+      console.log("Error");
+      return false;
+    }
   },
+
   addProducto: (args, req) => queryDB(req, "insert into producto SET ?", args).then((data) => {console.log(data); return data;}),
   addCliente: (args, req) => queryDB(req, "insert into cliente SET ?", args).then((data) => {console.log(data); return data;}),
   addCategoria: (args, req) => {
