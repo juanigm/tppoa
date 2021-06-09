@@ -35,11 +35,11 @@ query{
     }
   }
 
-  query{
-    canjes {
-      canjeID
-      clientID
-      fecha
-      totalPuntos
-    }
+query{
+  canjes {
+    canjeID
+    clientID
+    fecha
+    totalPuntos
   }
+}

@@ -71,7 +71,8 @@ type User {
     addProducto(precio: Float, marca: String, descripcion: String, categoria: Int): Boolean
     addCategoria(nombre: String, descripcion: String): Categoria
     addCliente(Nombre: String, Apellido: String, Documento: Int, mail: String, password: String, Puntos: Int): Boolean
-    addCanje(clientID: Int, fecha: Date, totalPuntos: Int, token: String, productos: [Producto]): [Canje]
+    addCanje(clientID: Int, productos: [Int]): [Canje]
+    logout(tokenID: Int): Canje
     addCanjeProducto(canjeID: Int, productID: Int): [canjeproducto]
     updateUserInfo(id: Int, name: String, email: String, job_title: String) : Boolean
     createUser(name: String, email: String, job_title: String) : Boolean
@@ -81,6 +82,7 @@ type User {
 
 const queryDB = (req, sql, args) => new Promise((resolve, reject) => {
     req.mysqlDb.query(sql, args, (err, rows) => {
+    console.log("sql: ", sql)
         if (err)
             return reject(err);
         //console.log(rows);
@@ -98,7 +100,7 @@ function generarToken(){
 
 }
 
-function validarToken(req, token){
+async function validarToken(req, token){
   queryDB(req, "select * from token where token = '" + token + "' and vigente = 1 ")
   .then((data) => {
     console.log("data en funcion: ", data);
@@ -121,6 +123,7 @@ const root = {
   clientes: (args, req) => queryDB(req, "select * from cliente").then((data) => {console.log("Clientes", data); return data;}),
   categorias: (args, req) => queryDB(req, "select * from categoria").then((data) => {console.log("Categorias: ", data); return data;}),
   canjes: (args, req) => queryDB(req, "select * from canje").then((data) => {console.log("Canjes: ", data); return data;}),
+  logout: (args, req) => queryDB(req, "update token SET vigente = ? where tokenID = ? and vigente = 1",[0, args.tokenID]).then((data) => {console.log("Canjes: ", data); return data;}),
 
   //MUTATIONS
 
@@ -168,20 +171,28 @@ const root = {
 
     })
   },
-  addCanje: (args, req) => {
+   addCanje: async (args, req) => {
     //console.log("argumentos: ", args)
 
-    
-    /*const tokenValido = validarToken(req, args.token);
+    const tokenValido = await validarToken(req, args.token);
     if(!tokenValido){
       console.log("token invalido")
       return "Token invalido";
-    }*/
-
+    }
     delete args["token"];
-    queryDB(req, "insert into canje SET ?", args)
+    const puntos = queryDB(req, "select puntos from cliente where ClientID = ?", args.clientID)
+    console.log("args", args.productos)
+    let inProducts = "(";
+    args.productos.forEach(p => {
+      inProducts.substring(0,1) != "(" ? inProducts+="," : ""
+      inProducts += p+"";
+    });
+    inProducts += ")"; 
+    const puntosProductos = queryDB(req, "select Precio from producto where ProductID in " +  inProducts + "")
     .then((data) => {
-      if(data){
+      console.log(data[0]);
+      console.log(data); return data;
+     /* if(data){
        console.log("Add Canje: ", data);
        //const cliente = queryDB(req, "update cliente SET puntos = 1 where ClientID = ?", args.clientID)
        const canjes = queryDB(req, "select * from canje")
@@ -192,8 +203,7 @@ const root = {
        return canjes;
       } else{
         console.log("array vacio, data vacia", data);
-      }
-     //Else, devolver error
+      }*/
     }).catch(e => {
       console.log(e);
     })
