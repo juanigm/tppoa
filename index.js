@@ -76,7 +76,7 @@ type User {
     addProducto(precio: Float, marca: String, descripcion: String, categoria: Int): Boolean
     addCategoria(nombre: String, descripcion: String): Categoria
     addCliente(Nombre: String, Apellido: String, Documento: Int, mail: String, password: String, Puntos: Int): Boolean
-    addCanje(token: String, productos: [Int]): [Canje]
+    addCanje(token: String, productos: [Int]): Canje
     login(mail: String, password: String): loginResponse
     logout(token: String): Boolean
     addCanjeProducto(canjeID: Int, productID: Int): [canjeproducto]
@@ -230,6 +230,8 @@ const root = {
     }
     delete args["token"];*/
 
+    let canjeFinal = {};
+
     const clienteID = await queryDB(req, "select clientID from token where token = ?", args.token)
     .then((data) => {
       const c = {...data[0]};
@@ -257,8 +259,19 @@ const root = {
         const nuevoCanje = await queryDB(req, "insert into canje values ('', ?, ?, ?)", [clienteID, new Date().toISOString().slice(0, 10).replace('T', ' '), puntosProductos])
         .then((data) => {
           console.log("New canje data: ", data);
-          return data; 
+          return data;
         })
+
+        canjeFinal.canjeID = nuevoCanje;
+        canjeFinal.clientID = clienteID;
+        canjeFinal.fecha = new Date().toISOString().slice(0, 10).replace('T', ' ');
+        canjeFinal.totalPuntos = puntosProductos;
+
+        queryDB(req, "update cliente SET Puntos = ? where ClientID = ?", [puntosCliente - puntosProductos, clienteID])
+        .then((data) => {
+          console.log(data); 
+          return data;
+         })
 
         /*
         let values = []
@@ -271,10 +284,12 @@ const root = {
           return data; 
         })
         */
-
       }else{
 
       }
+
+      return canjeFinal;
+
     }
 
     
