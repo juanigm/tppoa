@@ -3,7 +3,7 @@
 
 
 mutation{
-    addCanje(clientID: 1, fecha: "10/10/2010", totalPuntos: 50) {
+    addCanje(token: "aacteptg7jd", productos: [7,8]) {
       canjeID
       clientID
       fecha

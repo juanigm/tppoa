@@ -76,7 +76,7 @@ type User {
     addProducto(precio: Float, marca: String, descripcion: String, categoria: Int): Boolean
     addCategoria(nombre: String, descripcion: String): Categoria
     addCliente(Nombre: String, Apellido: String, Documento: Int, mail: String, password: String, Puntos: Int): Boolean
-    addCanje(clientID: Int, productos: [Int]): [Canje]
+    addCanje(token: String, productos: [Int]): [Canje]
     login(mail: String, password: String): loginResponse
     logout(token: String): Boolean
     addCanjeProducto(canjeID: Int, productID: Int): [canjeproducto]
@@ -88,6 +88,8 @@ type User {
 
 const queryDB = (req, sql, args) => new Promise((resolve, reject) => {
     req.mysqlDb.query(sql, args, (err, rows) => {
+      console.log("sql", sql);
+      console.log("ARGSSGSG: ", args);
         if (err)
             return reject(err);
         //console.log(rows);
@@ -221,43 +223,65 @@ const root = {
    addCanje: async (args, req) => {
     //console.log("argumentos: ", args)
 
-    const tokenValido = await validarToken(req, args.token);
+    /*const tokenValido = await validarToken(req, args.token);
     if(!tokenValido){
       console.log("token invalido")
       return "Token invalido";
     }
-    delete args["token"];
-    const puntos = queryDB(req, "select puntos from cliente where ClientID = ?", args.clientID)
-    console.log("args", args.productos)
-    let inProducts = "(";
-    args.productos.forEach(p => {
-      inProducts.substring(0,1) != "(" ? inProducts+="," : ""
-      inProducts += p+"";
-    });
-    inProducts += ")"; 
-    const puntosProductos = queryDB(req, "select Precio from producto where ProductID in " +  inProducts + "")
+    delete args["token"];*/
+
+    const clienteID = await queryDB(req, "select clientID from token where token = ?", args.token)
     .then((data) => {
-      console.log(data[0]);
-      console.log(data); return data;
-     /* if(data){
-       console.log("Add Canje: ", data);
-       //const cliente = queryDB(req, "update cliente SET puntos = 1 where ClientID = ?", args.clientID)
-       const canjes = queryDB(req, "select * from canje")
-       .then((data) => {
-         console.log("Canje data: ", data); 
-         return data;
-        });
-       return canjes;
-      } else{
-        console.log("array vacio, data vacia", data);
-      }*/
-    }).catch(e => {
-      console.log(e);
+      const c = {...data[0]};
+      console.log("ID del cliente", c.clientID); 
+      return c.clientID;
     })
+
+    if(clienteID){
+      const puntosCliente = await queryDB(req, "select Puntos from cliente where ClientID = ?", clienteID)
+      .then((data) => {
+        const p = {...data[0]};
+        console.log("Puntos del cliente", p.Puntos); 
+        return p.Puntos;
+      })
+
+      console.log("args", args.productos)
+      const puntosProductos = await queryDB(req, "select sum(Precio) AS puntosTotales from producto where ProductID in ('" + args.productos.join("','") + "')")
+      .then((data) => {
+        const p = {...data[0]};
+        console.log(p.puntosTotales);
+        return p.puntosTotales;
+
+      })
+      if(puntosCliente > puntosProductos){
+        const nuevoCanje = await queryDB(req, "insert into canje values ('', ?, ?, ?)", [clienteID, new Date().toISOString().slice(0, 10).replace('T', ' '), puntosProductos])
+        .then((data) => {
+          console.log("New canje data: ", data);
+          return data; 
+        })
+
+        /*
+        let values = []
+        //args.productos.forEach( p => values.push("'" + nuevoCanje + "','" + p + "'"))
+        args.productos.forEach( p => values.push("'" + nuevoCanje + "','" + p + "'"))
+        console.log("VALUES: ", values);
+        queryDB(req, "INSERT INTO canjeproducto VALUES (?)", values)
+        .then((data) => {
+          console.log("New canjeProducto: ", data);
+          return data; 
+        })
+        */
+
+      }else{
+
+      }
+    }
+
+    
   },
 
     addCanjeProducto: (args, req) =>{
-      queryDB(req, "insert into canjeproducto SET ?", args)
+      queryDB(req, "insert into canjeproducto SET ?", args) 
       .then((data) => {
         console.log(data);
         return data;
