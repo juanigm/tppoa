@@ -67,7 +67,6 @@ type User {
     productos: [Producto],
     clientes: [Cliente],
     categorias: [Categoria],
-    login(mail: String, password: String): loginResponse,
     canjes: [Canje],
     getUsers: [User],
     getUserInfo(id: Int) : User
@@ -78,7 +77,8 @@ type User {
     addCategoria(nombre: String, descripcion: String): Categoria
     addCliente(Nombre: String, Apellido: String, Documento: Int, mail: String, password: String, Puntos: Int): Boolean
     addCanje(clientID: Int, productos: [Int]): [Canje]
-    logout(tokenID: Int): Canje
+    login(mail: String, password: String): loginResponse
+    logout(token: String): Boolean
     addCanjeProducto(canjeID: Int, productID: Int): [canjeproducto]
     updateUserInfo(id: Int, name: String, email: String, job_title: String) : Boolean
     createUser(name: String, email: String, job_title: String) : Boolean
@@ -128,7 +128,8 @@ const root = {
   clientes: (args, req) => queryDB(req, "select * from cliente").then((data) => {console.log("Clientes", data); return data;}),
   categorias: (args, req) => queryDB(req, "select * from categoria").then((data) => {console.log("Categorias: ", data); return data;}),
   canjes: (args, req) => queryDB(req, "select * from canje").then((data) => {console.log("Canjes: ", data); return data;}),
-  logout: (args, req) => queryDB(req, "update token SET vigente = ? where tokenID = ? and vigente = 1",[0, args.tokenID]).then((data) => {console.log("Canjes: ", data); return data;}),
+  
+  
 
   //MUTATIONS
 
@@ -167,8 +168,31 @@ const root = {
     }
   },
 
-  addProducto: (args, req) => queryDB(req, "insert into producto SET ?", args).then((data) => {console.log(data); return data;}),
-  addCliente: (args, req) => queryDB(req, "insert into cliente SET ?", args).then((data) => {console.log(data); return data;}),
+  logout: (args, req) => {
+    queryDB(req, "DELETE FROM token WHERE clientID = (SELECT clientID FROM token WHERE token = ?)", args.token)
+    .then((data) => {
+      console.log("Canjes: ", data); 
+      return data;
+    })
+    return true;  
+  },
+
+  addProducto: (args, req) =>{
+   queryDB(req, "insert into producto SET ?", args)
+   .then((data) => {
+     console.log(data); 
+     return data;
+    })
+  },
+
+  addCliente: (args, req) =>{
+   queryDB(req, "insert into cliente SET ?", args)
+   .then((data) => {
+     console.log(data); 
+     return data;
+    })
+  },
+
   addCategoria: (args, req) => {
     queryDB(req, "insert into categoria SET ?", args)
     //.then(data => data);
@@ -193,6 +217,7 @@ const root = {
 
     })
   },
+
    addCanje: async (args, req) => {
     //console.log("argumentos: ", args)
 
@@ -230,21 +255,18 @@ const root = {
       console.log(e);
     })
   },
-  addCanjeProducto: (args, req) => queryDB(req, "insert into canjeproducto SET ?", args)
-  .then((data) => {
-    console.log(data);
-     return data;
-  })
-  //const puntos = queryDB(req, "insert into canjeproducto SET ?", args)
 
-  
+    addCanjeProducto: (args, req) =>{
+      queryDB(req, "insert into canjeproducto SET ?", args)
+      .then((data) => {
+        console.log(data);
+        return data;
+    })
+  },
 
-  /*getUsers: (args, req) => queryDB(req, "select * from users").then(data => data),
-  getUserInfo: (args, req) => queryDB(req, "select * from users where id = ?", [args.id]).then(data => data[0]),
-  updateUserInfo: (args, req) => queryDB(req, "update users SET ? where id = ?", [args, args.id]).then(data => data),
-  createUser: (args, req) => queryDB(req, "insert into users SET ?", args).then(data => data),
-  deleteUser: (args, req) => queryDB(req, "delete from users where id = ?", [args.id]).then(data => data)*/
 };
+
+//CONEXION BASE DE DATOS
 
 app.use((req, res, next) => {
   req.mysqlDb = mysql.createConnection({
@@ -256,6 +278,8 @@ app.use((req, res, next) => {
   req.mysqlDb.connect();
   next();
 });
+
+//SERVIDOR
 
 app.use('/graphql', graphqlHTTP({
   schema: schema,

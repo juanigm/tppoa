@@ -1,8 +1,6 @@
 //GOOOD PERO NO MUESTRA EN EL PLAYGROUND, NO DEVUELVE EL OBJETO
 //GOD LO DEL TOKEN
-query{
-    login(mail:"juanigm99@gmail.com", password: "123")
-}
+
 
 mutation{
     addCanje(clientID: 1, fecha: "10/10/2010", totalPuntos: 50) {
@@ -14,6 +12,22 @@ mutation{
   }
 
 //GOOOOOOOOOOOD
+
+mutation{
+  login(mail:"juanigm99@gmail.com", password: "123") {
+    cliente {
+      Puntos
+      token
+    }
+    productos {
+      ProductID
+      Precio
+      Marca
+      Descripcion
+    }
+  } 
+}
+
 query{
     productos {
 	  ProductID
@@ -42,4 +56,8 @@ query{
     fecha
     totalPuntos
   }
+}
+
+mutation{
+  logout(token: "gc26lmsgre")
 }
