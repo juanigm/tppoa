@@ -56,6 +56,7 @@ type loginResponse{
   productos: [Producto]
 }
 
+
 type User {
     id: String
     name: String
@@ -68,21 +69,16 @@ type User {
     clientes: [Cliente],
     categorias: [Categoria],
     canjes: [Canje],
-    getUsers: [User],
-    getUserInfo(id: Int) : User
   }
 
   type Mutation {
-    addProducto(precio: Float, marca: String, descripcion: String, categoria: Int): Boolean
+    addProducto(precio: Float, marca: String, descripcion: String, categoria: Int): Producto
     addCategoria(nombre: String, descripcion: String): Categoria
     addCliente(Nombre: String, Apellido: String, Documento: Int, mail: String, password: String, Puntos: Int): Boolean
     addCanje(token: String, productos: [Int]): Canje
     login(mail: String, password: String): loginResponse
     logout(token: String): Boolean
     addCanjeProducto(canjeID: Int, productID: Int): [canjeproducto]
-    updateUserInfo(id: Int, name: String, email: String, job_title: String) : Boolean
-    createUser(name: String, email: String, job_title: String) : Boolean
-    deleteUser(id: Int) : Boolean
   }
 `);
 
@@ -180,9 +176,9 @@ const root = {
   },
 
   addProducto: (args, req) =>{
-   queryDB(req, "insert into producto SET ?", args)
+    queryDB(req, "insert into producto SET ?", args)
    .then((data) => {
-     console.log(data); 
+     console.log("Data: ", data);
      return data;
     })
   },
@@ -285,7 +281,7 @@ const root = {
         })
         */
       }else{
-
+        console.log("Cantidad de puntos insuficiente")
       }
 
       return canjeFinal;
